@@ -17,6 +17,7 @@ return new class extends Migration
             $table->date('due_date');
             $table->enum('priority', ['low', 'medium', 'high'])->default('low');
             $table->enum('status', ['todo', 'in_progress', 'done'])->default('todo');
+            $table->unsignedBigInteger('project_id');
             $table->timestamps();
         });
     }

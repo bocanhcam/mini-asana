@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->boolean('is_active')->default(true);
             $table->unsignedBigInteger('user_id');
             $table->timestamps();
         });

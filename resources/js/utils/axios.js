@@ -1,13 +1,11 @@
 import axios from 'axios'
-import { useToast } from 'primevue/usetoast'
+import {router} from "@inertiajs/vue3";
 
-// Tạo instance mặc định
 const api = axios.create({
     baseURL: '/api',
-    withCredentials: true, // nếu dùng Sanctum
+    withCredentials: true,
 })
 
-// Gắn Authorization header
 api.interceptors.request.use(config => {
     const token = localStorage.getItem('token') // hoặc từ Pinia / Vuex
     if (token) {
@@ -16,13 +14,12 @@ api.interceptors.request.use(config => {
     return config
 })
 
-// Xử lý lỗi toàn cục
 api.interceptors.response.use(
     response => response,
     error => {
-        const message = error.response?.data?.message || 'Something went wrong'
-
-        useToast().add({ severity: 'error', summary: 'Error', detail: message, life: 4000 })
+        if (error.response.status === 401) {
+            router.visit('/login')
+        }
         return Promise.reject(error)
     }
 )

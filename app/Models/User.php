@@ -52,4 +52,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class);
     }
+
+    public function findProjectOrFail(int $projectId)
+    {
+        return $this->projects()->findOrFail($projectId);
+    }
 }

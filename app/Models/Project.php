@@ -9,8 +9,17 @@ class Project extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function findTaskOrFail(int $taskId)
+    {
+        return $this->tasks()->findOrFail($taskId);
     }
 }

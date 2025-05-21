@@ -5,12 +5,12 @@ export default {
         return api.get('/projects')
     },
     create(data) {
-        return api.post('/projects', data)
+        return api.post('/projects/create', data)
     },
     update(id, data) {
-        return api.put(`/projects/${id}`, data)
+        return api.put(`/projects/${id}/edit`, data)
     },
     delete(id) {
-        return api.delete(`/projects/${id}`)
+        return api.delete(`/projects/${id}/delete`)
     }
 }

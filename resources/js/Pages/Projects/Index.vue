@@ -1,111 +1,139 @@
 <template>
-    <div class="p-6 max-w-5xl mx-auto">
+    <div class="p-6 max-w-5xl mx-auto bg-gray-100 min-h-screen space-y-6">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold">Projects</h1>
-            <Button label="New Project" icon="pi pi-plus" @click="showCreateModal = true" />
+            <Button label="New Project" @click="openCreateModal" />
         </div>
 
-        <DataView :value="projects" layout="grid" :paginator="false">
+        <DataView v-if="projects" :value="projects" layout="grid" :paginator="false">
             <template #grid="slotProps">
-                <div class="p-4 w-full sm:w-1/2 md:w-1/3">
-                    <Card class="h-full flex flex-col justify-between">
-                        <template #title>
-                            <div class="flex items-center justify-between">
-                                <span>{{ slotProps.data.name }}</span>
-                                <div class="space-x-2">
-                                    <Button icon="pi pi-pencil" class="p-button-text" @click="editProject(slotProps.data)" />
-                                    <Button icon="pi pi-trash" class="p-button-text p-button-danger" @click="confirmDelete(slotProps.data)" />
+                <div class="flex flex-wrap">
+                    <div v-for="(item, index) in slotProps.items" :key="index" class="p-4 w-full sm:w-1/2 md:w-1/3">
+                        <Card class="shadow-md border border-gray-200 rounded-md">
+                            <template #title>
+                                <div class="flex items-center justify-between">
+                                    <Tag :severity="item.is_active ? 'success' : 'secondary'" :value="item.is_active ? 'Active' : 'Inactive'"></Tag>
+                                    <div class="space-x-2">
+                                        <Button label="Edit" class="p-button-text" @click="openEditModal(item)" />
+                                        <Button label="Delete" class="p-button-text p-button-danger" @click="confirmDelete(item)" />
+                                    </div>
                                 </div>
-                            </div>
-                        </template>
-                    </Card>
+                                <div class="flex flex-col gap-2 mt-2">
+                                    <Link :href="`/projects/${item.id}/tasks`" class="text-xl font-bold break-words">#{{ item.id }} - {{ item.title }}</Link>
+                                    <div class="break-words whitespace-normal">{{ item.description }}</div>
+                                </div>
+                            </template>
+                        </Card>
+                    </div>
                 </div>
             </template>
         </DataView>
 
-        <!-- Create Modal -->
-        <Dialog v-model:visible="showCreateModal" header="Create Project" modal>
-            <div class="space-y-4">
-                <label class="block font-medium">Name</label>
-                <InputText v-model="form.name" class="w-full" />
-                <Button label="Create" class="w-full" @click="submitCreate" :loading="loading" />
-            </div>
-        </Dialog>
-
-        <!-- Edit Modal -->
-        <Dialog v-model:visible="showEditModal" header="Edit Project" modal>
-            <div class="space-y-4">
-                <label class="block font-medium">Name</label>
-                <InputText v-model="form.name" class="w-full" />
-                <Button label="Update" class="w-full" @click="submitUpdate" :loading="loading" />
-            </div>
-        </Dialog>
+        <ProjectForm
+            :mode="modalMode"
+            v-model:visible="showModal"
+            v-model:modelValue="form"
+            :loading="loading"
+            @submit="handleSubmit"
+            @cancel="handleCancel"
+            :errors="errors"
+        />
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Link } from '@inertiajs/vue3'
 import { useToast } from 'primevue/usetoast'
-import projectApi from '@/api/project'
+import projectApi from '../../api/project'
+import Button from 'primevue/button'
+import DataView from 'primevue/dataview'
+import Card from 'primevue/card'
+import Tag from 'primevue/tag';
+import ProjectForm from './Form.vue'
 
 const toast = useToast()
 
 const projects = ref([])
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const loading = ref(false)
 
+const modalMode = ref('create')
+const showModal = ref(false)
 const form = ref({
     id: null,
-    name: ''
+    title: '',
+    description: '',
+    is_active: true,
 })
+
+const errors = ref({})
+
+const loading = ref(false)
+
+const resetForm = () => {
+    form.value = {
+        id: null,
+        title: '',
+        description: '',
+        is_active: true,
+    }
+}
+
+const resetErrors = () => {
+    errors.value = {}
+}
 
 const fetchProjects = async () => {
     try {
         const res = await projectApi.getAll()
-        projects.value = res.data
+        projects.value = res.data.projects
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to load projects' })
     }
 }
 
-const submitCreate = async () => {
-    loading.value = true
-    try {
-        await projectApi.create({ name: form.value.name })
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Project created' })
-        showCreateModal.value = false
-        form.value.name = ''
-        await fetchProjects()
-    } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Create failed' })
-    } finally {
-        loading.value = false
-    }
+const openCreateModal = () => {
+    modalMode.value = 'create'
+    resetForm()
+    resetErrors()
+    showModal.value = true
 }
 
-const editProject = (project) => {
+const openEditModal = (project) => {
+    modalMode.value = 'edit'
+    console.log(modalMode.value)
+    resetErrors()
     form.value = { ...project }
-    showEditModal.value = true
+    showModal.value = true
 }
 
-const submitUpdate = async () => {
+const handleCancel = () => {
+    showModal.value = false
+}
+
+const handleSubmit = async (formData) => {
     loading.value = true
     try {
-        await projectApi.update(form.value.id, { name: form.value.name })
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Project updated' })
-        showEditModal.value = false
-        form.value = { id: null, name: '' }
+        if (modalMode.value === 'create') {
+            await projectApi.create(formData)
+        } else {
+            await projectApi.update(formData.id, formData)
+        }
+        showModal.value = false
+
+        toast.add({ severity: 'success', summary: 'Success', detail: 'Success' })
         await fetchProjects()
     } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Update failed' })
+        if (e.response?.status === 422) {
+            errors.value = e.response.data.errors
+        }
+        toast.add({ severity: 'error', summary: 'Error', detail: e.response?.data?.message || 'Failed' })
     } finally {
         loading.value = false
     }
 }
 
 const confirmDelete = async (project) => {
-    if (!confirm(`Are you sure to delete "${project.name}"?`)) return
+    if (!confirm(`Are you sure to delete "#${project.id} - ${project.title}"?`)) return
 
     try {
         await projectApi.delete(project.id)
@@ -118,3 +146,9 @@ const confirmDelete = async (project) => {
 
 onMounted(fetchProjects)
 </script>
+
+<style scoped>
+:deep(.p-dataview-content){
+    background: transparent !important;
+}
+</style>

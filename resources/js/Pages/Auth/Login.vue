@@ -6,31 +6,42 @@
             <div>
                 <label for="email" class="block text-sm font-medium mb-1">Email</label>
                 <InputText id="email" v-model="form.email" class="w-full" />
-                <small v-if="errors.email" class="text-red-500">{{ errors.email }}</small>
+                <small v-if="errors.email" class="text-red-500">{{ errors.email[0] }}</small>
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium mb-1">Password</label>
-                <Password id="password" v-model="form.password" toggleMask class="w-full" inputClass="w-full"/>
-                <small v-if="errors.password" class="text-red-500">{{ errors.password }}</small>
+                <Password id="password" v-model="form.password" toggleMask class="w-full" inputClass="w-full" :feedback="false"/>
+                <small v-if="errors.password" class="text-red-500">{{ errors.password[0] }}</small>
             </div>
 
             <Button type="submit" label="Login" class="w-full"/>
+
+            <div class="text-center text-sm mt-4">
+                Don't have an account?
+                <Link href="/register" class="text-blue-600 hover:underline font-medium">Register</Link>
+            </div>
         </form>
     </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
-import { router } from '@inertiajs/vue3'
+import {reactive, ref} from 'vue'
+import { router, Link } from '@inertiajs/vue3'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import api from "../../utils/axios.js";
+import {useToast} from "primevue/usetoast";
 
-defineProps({ errors: Object })
+const toast = useToast()
 
 const form = reactive({
+    email: null,
+    password: null,
+})
+
+const errors = ref({
     email: null,
     password: null,
 })
@@ -42,16 +53,17 @@ const submit = async () => {
             password: form.password
         })
 
-        // Redirect or show success
         if (response.status === 200) {
             const token = response.data.token
 
             localStorage.setItem('token', token)
 
-            router.visit('/projects') // hoặc bất kỳ route nào sau login
+            router.visit('/projects')
         }
     } catch (err) {
-        alert('Login failed: ' + err.response?.data?.message || err.message)
+        errors.value = err.response?.data?.errors
+
+        toast.add({severity:'error', summary:'Error', detail: err.response?.data?.message || 'Something went wrong'})
     } finally {
         //isSubmitting.value = false
     }
