@@ -14,15 +14,20 @@ RUN apt-get update && apt-get install -y \
         libjpeg62-turbo-dev \
         libpng-dev \
         libzip-dev \
+        libpq-dev \
+        gnupg \
         git \
+        nano \
+        vim \
         zip \
         unzip \
-        curl \
+        supervisor \
+        cron \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd pdo pdo_sqlite zip sockets exif \
-    && pecl install xdebug redis \
-    && docker-php-ext-enable xdebug redis \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && docker-php-ext-install -j$(nproc) gd pdo zip sockets exif \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug \
+    && apt-get -y autoremove && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Node.js 20
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
