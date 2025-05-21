@@ -25,8 +25,14 @@
     </div>
 </template>
 
+<script>
+export default {
+    layout: null,
+}
+</script>
+
 <script setup>
-import {reactive, ref} from 'vue'
+import {reactive, ref, onMounted} from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'

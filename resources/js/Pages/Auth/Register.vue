@@ -26,6 +26,12 @@
     </div>
 </template>
 
+<script>
+export default {
+    layout: null,
+}
+</script>
+
 <script setup>
 import {reactive, ref} from 'vue'
 import { router } from '@inertiajs/vue3'
